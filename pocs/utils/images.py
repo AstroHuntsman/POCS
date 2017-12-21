@@ -429,7 +429,11 @@ def fpack(fits_fname, unpack=False, verbose=False):
         run_cmd = [fpack, '-D', '-Y', fits_fname]
         out_file = fits_fname.replace('.fits', '.fits.fz')
 
-    assert fpack is not None, warn("fpack not found (try installing cfitsio)")
+    try:
+        assert fpack is not None
+    except AssertionError:
+        warn("fpack not found (try installing cfitsio). File has not been changed")
+        return fits_fname
 
     if verbose:
         print("fpack command: {}".format(run_cmd))
@@ -701,7 +705,15 @@ def cr2_to_fits(
         hdu.header.set('RA-MNT', headers.get('ra_mnt', ''), 'Degrees')
         hdu.header.set('HA-MNT', headers.get('ha_mnt', ''), 'Degrees')
         hdu.header.set('DEC-MNT', headers.get('dec_mnt', ''), 'Degrees')
-        hdu.header.set('EQUINOX', headers.get('equinox', ''))
+
+        # Explicity convert the equinox for FITS header
+        try:
+            equinox = float(headers['equinox'].value.replace('J', ''))
+        except KeyError:
+            equinox = ''
+
+        hdu.header.set('EQUINOX', equinox)
+
         hdu.header.set('AIRMASS', headers.get('airmass', ''), 'Sec(z)')
         hdu.header.set('FILTER', headers.get('filter', ''))
         hdu.header.set('LAT-OBS', headers.get('latitude', ''), 'Degrees')
